@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mars.admin.modules.user.mapper.UserMapper">
+
+    <!-- 根据用户名查询用户 -->
+    <select id="selectByUsername" resultType="com.mars.admin.modules.user.entity.User">
+        SELECT * FROM tb_user 
+        WHERE username = #{username} 
+        AND is_deleted = 0
+    </select>
+
+    <!-- 根据手机号查询用户 -->
+    <select id="selectByPhone" resultType="com.mars.admin.modules.user.entity.User">
+        SELECT * FROM tb_user 
+        WHERE phone = #{phone} 
+        AND is_deleted = 0
+    </select>
+
+    <!-- 根据邮箱查询用户 -->
+    <select id="selectByEmail" resultType="com.mars.admin.modules.user.entity.User">
+        SELECT * FROM tb_user 
+        WHERE email = #{email} 
+        AND is_deleted = 0
+    </select>
+
+    <!-- 根据微信OpenID查询用户 -->
+    <select id="selectByWechatOpenid" resultType="com.mars.admin.modules.user.entity.User">
+        SELECT * FROM tb_user 
+        WHERE wechat_openid = #{wechatOpenid} 
+        AND is_deleted = 0
+    </select>
+
+    <!-- 根据QQ OpenID查询用户 -->
+    <select id="selectByQqOpenid" resultType="com.mars.admin.modules.user.entity.User">
+        SELECT * FROM tb_user 
+        WHERE qq_openid = #{qqOpenid} 
+        AND is_deleted = 0
+    </select>
+
+    <!-- 更新用户登录信息 -->
+    <update id="updateLoginInfo">
+        UPDATE tb_user 
+        SET last_login_time = NOW(), 
+            last_login_ip = #{loginIp},
+            update_time = NOW()
+        WHERE id = #{userId}
+    </update>
+
+    <!-- 更新用户统计信息 -->
+    <update id="updateUserStats">
+        UPDATE tb_user 
+        SET followers_count = #{followersCount},
+            following_count = #{followingCount},
+            posts_count = #{postsCount},
+            likes_count = #{likesCount},
+            update_time = NOW()
+        WHERE id = #{userId}
+    </update>
+
+    <!-- 更新用户等级和经验 -->
+    <update id="updateUserLevel">
+        UPDATE tb_user 
+        SET level = #{level},
+            experience = #{experience},
+            update_time = NOW()
+        WHERE id = #{userId}
+    </update>
+
+    <!-- 更新用户积分 -->
+    <update id="updateUserPoints">
+        UPDATE tb_user 
+        SET points = points + #{points},
+            update_time = NOW()
+        WHERE id = #{userId}
+    </update>
+
+    <!-- 更新用户认证状态 -->
+    <update id="updateVerifiedStatus">
+        UPDATE tb_user 
+        SET is_verified = #{isVerified},
+            verified_type = #{verifiedType},
+            update_time = NOW()
+        WHERE id = #{userId}
+    </update>
+
+    <!-- 根据等级查询用户列表 -->
+    <select id="selectByLevel" resultType="com.mars.admin.modules.user.entity.User">
+        SELECT * FROM tb_user 
+        WHERE level = #{level} 
+        AND is_deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据认证状态查询用户列表 -->
+    <select id="selectByVerifiedStatus" resultType="com.mars.admin.modules.user.entity.User">
+        SELECT * FROM tb_user 
+        WHERE is_deleted = 0
+        <if test="isVerified != null">
+            AND is_verified = #{isVerified}
+        </if>
+        <if test="verifiedType != null">
+            AND verified_type = #{verifiedType}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 查询活跃用户（按最后登录时间排序） -->
+    <select id="selectActiveUsers" resultType="com.mars.admin.modules.user.entity.User">
+        SELECT * FROM tb_user 
+        WHERE is_deleted = 0 
+        AND last_login_time IS NOT NULL
+        ORDER BY last_login_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询用户排行榜（按积分排序） -->
+    <select id="selectUserRanking" resultType="com.mars.admin.modules.user.entity.User">
+        SELECT * FROM tb_user 
+        WHERE is_deleted = 0 
+        ORDER BY points DESC, level DESC, experience DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper> 

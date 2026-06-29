@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mars.admin.modules.chat.mapper.ChatMessageMapper">
+
+    <select id="findBySessionId" resultType="com.mars.admin.modules.chat.entity.ChatMessage">
+        SELECT * FROM tb_chat_message
+        WHERE session_id = #{sessionId}
+        ORDER BY send_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="getUnreadCount" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM tb_chat_message
+        WHERE session_id = #{sessionId} AND receiver_id = #{userId} AND status = 0
+    </select>
+
+    <update id="markAsRead">
+        UPDATE tb_chat_message
+        SET status = 1, read_time = NOW()
+        WHERE session_id = #{sessionId} AND receiver_id = #{userId} AND status = 0
+    </update>
+
+    <select id="getLatestMessage" resultType="com.mars.admin.modules.chat.entity.ChatMessage">
+        SELECT * FROM tb_chat_message
+        WHERE session_id = #{sessionId}
+        ORDER BY send_time DESC
+        LIMIT 1
+    </select>
+
+</mapper>

@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mars.admin.modules.chat.mapper.ChatSessionMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.mars.admin.modules.chat.entity.ChatSession">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user1_id" property="user1Id" jdbcType="BIGINT"/>
+        <result column="user2_id" property="user2Id" jdbcType="BIGINT"/>
+        <result column="last_message" property="lastMessage" jdbcType="VARCHAR"/>
+        <result column="last_message_time" property="lastMessageTime" jdbcType="TIMESTAMP"/>
+        <result column="user1_unread_count" property="user1UnreadCount" jdbcType="INTEGER"/>
+        <result column="user2_unread_count" property="user2UnreadCount" jdbcType="INTEGER"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 会话VO结果映射 -->
+    <resultMap id="ChatSessionVOResultMap" type="com.mars.admin.modules.chat.vo.ChatSessionVO">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user1_id" property="user1Id" jdbcType="BIGINT"/>
+        <result column="user2_id" property="user2Id" jdbcType="BIGINT"/>
+        <result column="last_message" property="lastMessage" jdbcType="VARCHAR"/>
+        <result column="last_message_time" property="lastMessageTime" jdbcType="TIMESTAMP"/>
+        <result column="user1_unread_count" property="user1UnreadCount" jdbcType="INTEGER"/>
+        <result column="user2_unread_count" property="user2UnreadCount" jdbcType="INTEGER"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="other_user_id" property="otherUserId" jdbcType="BIGINT"/>
+        <result column="other_user_nickname" property="otherUserNickname" jdbcType="VARCHAR"/>
+        <result column="other_user_avatar" property="otherUserAvatar" jdbcType="VARCHAR"/>
+        <result column="unread_count" property="unreadCount" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 会话包含用户信息VO结果映射 -->
+    <resultMap id="ChatSessionWithUsersVOResultMap" type="com.mars.admin.modules.chat.vo.ChatSessionWithUsersVO">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user1_id" property="user1Id" jdbcType="BIGINT"/>
+        <result column="user2_id" property="user2Id" jdbcType="BIGINT"/>
+        <result column="user1_name" property="user1Name" jdbcType="VARCHAR"/>
+        <result column="user1_avatar" property="user1Avatar" jdbcType="VARCHAR"/>
+        <result column="user2_name" property="user2Name" jdbcType="VARCHAR"/>
+        <result column="user2_avatar" property="user2Avatar" jdbcType="VARCHAR"/>
+        <result column="last_message" property="lastMessage" jdbcType="VARCHAR"/>
+        <result column="last_message_time" property="lastMessageTime" jdbcType="TIMESTAMP"/>
+        <result column="user1_unread_count" property="user1UnreadCount" jdbcType="INTEGER"/>
+        <result column="user2_unread_count" property="user2UnreadCount" jdbcType="INTEGER"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, user1_id, user2_id, last_message, last_message_time, 
+        user1_unread_count, user2_unread_count, status, create_time, update_time
+    </sql>
+
+
+
+    <!-- 获取用户的所有会话列表 -->
+    <select id="findByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM tb_chat_session
+        WHERE (user1_id = #{userId} OR user2_id = #{userId})
+        AND status = 0
+        ORDER BY last_message_time DESC
+    </select>
+
+    <!-- 获取用户的所有会话列表（包含对方用户信息） -->
+    <select id="findSessionsWithUserInfo" resultMap="ChatSessionVOResultMap">
+        SELECT 
+            cs.id,
+            cs.user1_id,
+            cs.user2_id,
+            cs.last_message,
+            cs.last_message_time,
+            cs.user1_unread_count,
+            cs.user2_unread_count,
+            cs.status,
+            cs.create_time,
+            cs.update_time,
+            CASE 
+                WHEN cs.user1_id = #{userId} THEN cs.user2_id 
+                ELSE cs.user1_id 
+            END as other_user_id,
+            CASE 
+                WHEN cs.user1_id = #{userId} THEN u2.nickname 
+                ELSE u1.nickname 
+            END as other_user_nickname,
+            CASE 
+                WHEN cs.user1_id = #{userId} THEN u2.avatar 
+                ELSE u1.avatar 
+            END as other_user_avatar,
+            CASE 
+                WHEN cs.user1_id = #{userId} THEN cs.user1_unread_count 
+                ELSE cs.user2_unread_count 
+            END as unread_count
+        FROM tb_chat_session cs
+        LEFT JOIN tb_user u1 ON cs.user1_id = u1.id
+        LEFT JOIN tb_user u2 ON cs.user2_id = u2.id
+        WHERE (cs.user1_id = #{userId} OR cs.user2_id = #{userId})
+        AND cs.status = 0
+        ORDER BY cs.last_message_time DESC
+    </select>
+    <select id="findByUserIds" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM tb_chat_session
+        WHERE ((user1_id = #{user1Id} AND user2_id = #{user2Id})
+        OR (user1_id = #{user2Id} AND user2_id = #{user1Id}))
+        AND status = 0
+        LIMIT 1
+    </select>
+
+    <!-- 根据两个用户ID查找会话（包含用户信息） -->
+    <select id="findSessionWithUsersInfo" resultMap="ChatSessionWithUsersVOResultMap">
+        SELECT 
+            cs.id,
+            cs.user1_id,
+            cs.user2_id,
+            u1.nickname as user1_name,
+            u1.avatar as user1_avatar,
+            u2.nickname as user2_name,
+            u2.avatar as user2_avatar,
+            cs.last_message,
+            cs.last_message_time,
+            cs.user1_unread_count,
+            cs.user2_unread_count,
+            cs.status,
+            cs.create_time,
+            cs.update_time
+        FROM tb_chat_session cs
+        LEFT JOIN tb_user u1 ON cs.user1_id = u1.id
+        LEFT JOIN tb_user u2 ON cs.user2_id = u2.id
+        WHERE ((cs.user1_id = #{user1Id} AND cs.user2_id = #{user2Id})
+        OR (cs.user1_id = #{user2Id} AND cs.user2_id = #{user1Id}))
+        AND cs.status = 0
+        LIMIT 1
+    </select>
+
+    <update id="updateUnreadCount">
+        UPDATE tb_chat_session
+        SET user1_unread_count = CASE WHEN user1_id = #{userId} THEN #{count} ELSE user1_unread_count END,
+            user2_unread_count = CASE WHEN user2_id = #{userId} THEN #{count} ELSE user2_unread_count END
+        WHERE id = #{sessionId}
+    </update>
+
+    <update id="clearUnreadCount">
+        UPDATE tb_chat_session
+        SET user1_unread_count = CASE WHEN user1_id = #{userId} THEN 0 ELSE user1_unread_count END,
+            user2_unread_count = CASE WHEN user2_id = #{userId} THEN 0 ELSE user2_unread_count END
+        WHERE id = #{sessionId}
+    </update>
+
+</mapper> 
